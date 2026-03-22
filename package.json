@@ -1,0 +1,16 @@
+{
+  "name": "belysium-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "yarn workspace @belysium/api dev",
+    "dev:widget": "yarn workspace @belysium/widget dev",
+    "build:api": "yarn workspace @belysium/api build",
+    "build:widget": "yarn workspace @belysium/widget build",
+    "build:all": "yarn workspaces run build"
+  }
+}
