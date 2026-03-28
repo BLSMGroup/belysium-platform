@@ -1,0 +1,123 @@
+<!-- ============================================================
+     BELYSIUM AI CHAT WIDGET
+     Paste this into Squarespace: Pages > (any page) >
+     Edit > (+) Block > Code > paste entire block
+     Change data-division to match the page:
+       professional | developments | invest | family | life | general
+     ============================================================ -->
+<div id="blsm-chat-root" data-division="professional"></div>
+
+<style>
+  #blsm-chat-root { position: fixed; bottom: 28px; right: 28px; z-index: 9999; font-family: inherit; }
+  #blsm-bubble {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #1a1a2e; color: #fff; font-size: 26px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    transition: transform .2s;
+  }
+  #blsm-bubble:hover { transform: scale(1.08); }
+  #blsm-window {
+    display: none; flex-direction: column;
+    width: 360px; height: 500px; border-radius: 16px;
+    background: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    overflow: hidden; margin-bottom: 12px;
+  }
+  #blsm-window.open { display: flex; }
+  #blsm-header {
+    background: #1a1a2e; color: #fff;
+    padding: 14px 18px; font-weight: 600; font-size: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #blsm-close { cursor: pointer; font-size: 20px; line-height: 1; }
+  #blsm-messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .blsm-msg {
+    max-width: 80%; padding: 10px 14px; border-radius: 12px;
+    font-size: 14px; line-height: 1.45;
+  }
+  .blsm-msg.assistant { background: #f1f3f5; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .blsm-msg.user { background: #1a1a2e; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  #blsm-form { display: flex; border-top: 1px solid #eee; }
+  #blsm-input {
+    flex: 1; border: none; outline: none; padding: 12px 14px;
+    font-size: 14px; resize: none;
+  }
+  #blsm-send {
+    background: #1a1a2e; color: #fff; border: none;
+    padding: 0 18px; cursor: pointer; font-size: 18px;
+  }
+  #blsm-send:hover { background: #2d2d5e; }
+  .blsm-typing { color: #999; font-size: 13px; padding: 4px 16px; }
+</style>
+
+<script>
+(function () {
+  const API = 'https://belysium-api-production.up.railway.app';
+  const root = document.getElementById('blsm-chat-root');
+  const division = root.dataset.division || 'general';
+  const sessionId = 'blsm_' + Math.random().toString(36).slice(2);
+
+  root.innerHTML = `
+    <div id="blsm-window">
+      <div id="blsm-header">
+        <span>Belysium ${division.charAt(0).toUpperCase()+division.slice(1)} Assistant</span>
+        <span id="blsm-close">×</span>
+      </div>
+      <div id="blsm-messages"></div>
+      <div class="blsm-typing" id="blsm-typing" style="display:none">Thinking…</div>
+      <div id="blsm-form">
+        <textarea id="blsm-input" rows="1" placeholder="Ask anything…"></textarea>
+        <button id="blsm-send">➤</button>
+      </div>
+    </div>
+    <div id="blsm-bubble">💬</div>
+  `;
+
+  const win   = document.getElementById('blsm-window');
+  const msgs  = document.getElementById('blsm-messages');
+  const input = document.getElementById('blsm-input');
+  const typing = document.getElementById('blsm-typing');
+
+  document.getElementById('blsm-bubble').onclick = () => {
+    win.classList.toggle('open');
+    if (win.classList.contains('open') && msgs.children.length === 0) {
+      addMsg('assistant', 'Hello! How can I help you today?');
+    }
+  };
+  document.getElementById('blsm-close').onclick = () => win.classList.remove('open');
+  document.getElementById('blsm-send').onclick = send;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+  function addMsg(role, text) {
+    const d = document.createElement('div');
+    d.className = 'blsm-msg ' + role;
+    d.textContent = text;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    addMsg('user', text);
+    typing.style.display = 'block';
+    try {
+      const res = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, sessionId, division })
+      });
+      const data = await res.json();
+      addMsg('assistant', data.reply || 'Sorry, I could not process that.');
+    } catch (e) {
+      addMsg('assistant', 'Connection error. Please try again.');
+    } finally {
+      typing.style.display = 'none';
+    }
+  }
+})();
+</script>

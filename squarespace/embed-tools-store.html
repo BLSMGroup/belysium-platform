@@ -1,0 +1,193 @@
+<!-- ============================================================
+     BELYSIUM DIGITAL TOOLS STORE
+     Paste into a dedicated "Tools" page in Squarespace via Code Block.
+     Displays all purchasable AI tools with licensing tiers.
+     ============================================================ -->
+<div id="blsm-store"></div>
+
+<style>
+  #blsm-store { max-width: 960px; margin: 0 auto; padding: 40px 20px; font-family: inherit; }
+  .blsm-store-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 32px; }
+  .blsm-tool-card {
+    border: 1px solid #e5e7eb; border-radius: 14px;
+    padding: 28px 24px; display: flex; flex-direction: column; gap: 12px;
+    transition: box-shadow .2s;
+  }
+  .blsm-tool-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+  .blsm-tool-icon { font-size: 36px; }
+  .blsm-tool-name { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+  .blsm-tool-desc { font-size: 14px; color: #555; line-height: 1.5; flex: 1; }
+  .blsm-tool-division {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    color: #888; border: 1px solid #ddd; border-radius: 20px;
+    padding: 2px 10px; align-self: flex-start;
+  }
+  .blsm-tiers { display: flex; flex-direction: column; gap: 8px; }
+  .blsm-tier {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-radius: 8px; background: #f8f9fa;
+    font-size: 13px;
+  }
+  .blsm-tier-name { font-weight: 600; color: #1a1a2e; }
+  .blsm-tier-price { font-weight: 700; color: #1a1a2e; }
+  .blsm-tier-desc { font-size: 11px; color: #888; }
+  .blsm-buy-btn {
+    background: #1a1a2e; color: #fff; border: none; border-radius: 8px;
+    padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .2s;
+  }
+  .blsm-buy-btn:hover { background: #2d2d5e; }
+  /* Modal */
+  #blsm-modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 10000;
+    align-items: center; justify-content: center;
+  }
+  #blsm-modal-bg.open { display: flex; }
+  #blsm-modal {
+    background: #fff; border-radius: 16px; padding: 36px;
+    max-width: 440px; width: 90%; display: flex; flex-direction: column; gap: 16px;
+  }
+  #blsm-modal h3 { margin: 0; font-size: 20px; color: #1a1a2e; }
+  #blsm-modal input, #blsm-modal select {
+    width: 100%; padding: 11px 14px; border: 1px solid #ddd;
+    border-radius: 8px; font-size: 14px; box-sizing: border-box;
+  }
+  #blsm-modal-submit {
+    background: #1a1a2e; color: #fff; border: none; border-radius: 8px;
+    padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  #blsm-modal-close { align-self: flex-end; cursor: pointer; font-size: 22px; color: #999; line-height: 1; }
+  #blsm-modal-msg { font-size: 14px; color: #555; text-align: center; }
+</style>
+
+<script>
+(function () {
+  const API = 'https://belysium-api-production.up.railway.app';
+
+  const TOOLS = [
+    {
+      id: 'ebitda-analyzer',
+      icon: '📊',
+      name: 'EBITDA Gap Analyzer',
+      division: 'Professional',
+      description: 'AI-powered analysis that identifies your profitability gaps, benchmarks EBITDA against sector peers, and generates a prioritised action plan.',
+      tiers: [
+        { name: 'Starter', price: '€149', desc: '10 analyses / year', tier: 'starter' },
+        { name: 'Professional', price: '€449', desc: 'Unlimited + PDF export', tier: 'professional' },
+        { name: 'Enterprise', price: '€990', desc: 'Multi-entity + API access', tier: 'enterprise' }
+      ]
+    },
+    {
+      id: 'digital-maturity',
+      icon: '🧭',
+      name: 'Digital Maturity Scanner',
+      division: 'Professional',
+      description: 'Scores your organisation across 6 digital dimensions and produces a roadmap aligned with your strategic priorities.',
+      tiers: [
+        { name: 'Starter', price: '€99', desc: '5 scans / year', tier: 'starter' },
+        { name: 'Professional', price: '€299', desc: 'Unlimited + benchmarks', tier: 'professional' },
+        { name: 'Enterprise', price: '€750', desc: 'Team access + white-label', tier: 'enterprise' }
+      ]
+    },
+    {
+      id: 'property-roi',
+      icon: '🏢',
+      name: 'Property ROI Calculator',
+      division: 'Developments',
+      description: 'Model acquisition, rental yield, renovation costs and exit scenarios for Belgian residential and mixed-use property investments.',
+      tiers: [
+        { name: 'Starter', price: '€79', desc: '10 property models / year', tier: 'realestate' },
+        { name: 'Professional', price: '€249', desc: 'Unlimited + scenario export', tier: 'realestate' },
+        { name: 'Enterprise', price: '€590', desc: 'Portfolio-level + API', tier: 'realestate' }
+      ]
+    }
+  ];
+
+  let selected = null;
+
+  const store = document.getElementById('blsm-store');
+  store.innerHTML = `
+    <h2 style="font-size:28px;font-weight:700;color:#1a1a2e;margin:0">Belysium Digital Tools</h2>
+    <p style="color:#555;margin:8px 0 0">AI-powered tools built on our consulting methodologies. Purchase a license and start in minutes.</p>
+    <div class="blsm-store-grid">
+      ${TOOLS.map(t => `
+        <div class="blsm-tool-card">
+          <div class="blsm-tool-icon">${t.icon}</div>
+          <div class="blsm-tool-name">${t.name}</div>
+          <span class="blsm-tool-division">${t.division}</span>
+          <div class="blsm-tool-desc">${t.description}</div>
+          <div class="blsm-tiers">
+            ${t.tiers.map(tier => `
+              <div class="blsm-tier">
+                <div>
+                  <div class="blsm-tier-name">${tier.name}</div>
+                  <div class="blsm-tier-desc">${tier.desc}</div>
+                </div>
+                <div class="blsm-tier-price">${tier.price}</div>
+              </div>
+            `).join('')}
+          </div>
+          <button class="blsm-buy-btn" onclick="blsmOpenModal('${t.id}')">Get Access →</button>
+        </div>
+      `).join('')}
+    </div>
+    <div id="blsm-modal-bg">
+      <div id="blsm-modal">
+        <span id="blsm-modal-close" onclick="blsmCloseModal()">×</span>
+        <h3 id="blsm-modal-title">Get Access</h3>
+        <input id="blsm-modal-name" type="text" placeholder="Full name" />
+        <input id="blsm-modal-email" type="email" placeholder="Work email" />
+        <select id="blsm-modal-tier">
+          <option value="">Select tier…</option>
+        </select>
+        <button id="blsm-modal-submit" onclick="blsmSubmit()">Purchase License</button>
+        <div id="blsm-modal-msg"></div>
+      </div>
+    </div>
+  `;
+
+  window.blsmOpenModal = function (toolId) {
+    selected = TOOLS.find(t => t.id === toolId);
+    if (!selected) return;
+    document.getElementById('blsm-modal-title').textContent = 'Get Access — ' + selected.name;
+    const sel = document.getElementById('blsm-modal-tier');
+    sel.innerHTML = '<option value="">Select tier…</option>' +
+      selected.tiers.map(t => `<option value="${t.tier}">${t.name} — ${t.price} (${t.desc})</option>`).join('');
+    document.getElementById('blsm-modal-msg').textContent = '';
+    document.getElementById('blsm-modal-bg').classList.add('open');
+  };
+
+  window.blsmCloseModal = function () {
+    document.getElementById('blsm-modal-bg').classList.remove('open');
+  };
+
+  window.blsmSubmit = async function () {
+    const name  = document.getElementById('blsm-modal-name').value.trim();
+    const email = document.getElementById('blsm-modal-email').value.trim();
+    const tier  = document.getElementById('blsm-modal-tier').value;
+    const msg   = document.getElementById('blsm-modal-msg');
+    if (!name || !email || !tier) { msg.textContent = 'Please fill in all fields.'; return; }
+
+    document.getElementById('blsm-modal-submit').textContent = 'Processing…';
+    try {
+      const res = await fetch(`${API}/licenses/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, tier, toolId: selected.id })
+      });
+      const data = await res.json();
+      if (data.licenseKey) {
+        msg.innerHTML = `✅ License sent to <strong>${email}</strong>. Check your inbox!`;
+        document.getElementById('blsm-modal-submit').style.display = 'none';
+      } else {
+        msg.textContent = data.error || 'Something went wrong. Please try again.';
+        document.getElementById('blsm-modal-submit').textContent = 'Purchase License';
+      }
+    } catch (e) {
+      msg.textContent = 'Connection error. Please try again.';
+      document.getElementById('blsm-modal-submit').textContent = 'Purchase License';
+    }
+  };
+})();
+</script>
