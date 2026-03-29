@@ -15,24 +15,16 @@
 
 ## Step 2: Configure Build Settings
 
-Railway should auto-detect from `railway.json`:
-```json
-{
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd apps/api && npm install && npm run build"
-  },
-  "deploy": {
-    "startCommand": "cd apps/api && cp ../.env dist/.env && node dist/index.js",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
-  }
-}
-```
+Railway will auto-detect from the repository's build configuration files:
 
-If not auto-detected, set manually in **Settings > Build**:
-- **Build Command**: `cd apps/api && npm install && npm run build`
-- **Start Command**: `cd apps/api && cp ../.env dist/.env && node dist/index.js`
+- **`railway.json`** — Root-level config that Railway reads automatically
+- **`Nixpacks.toml`** — Explicit build instructions (optional, but included in this repo)
+
+No manual configuration needed if auto-detected. If Railway asks you to configure:
+
+**Build Settings**:
+- Build Command: `npm install --prefix apps/api && npm run build --prefix apps/api`
+- Start Command: `node apps/api/dist/index.js`
 
 ## Step 3: Set Environment Variables
 
@@ -90,10 +82,30 @@ Should return:
 
 ## Troubleshooting
 
-**Build fails**: Check Railway build logs. Usually missing env vars or incorrect start command.
+**Build fails with "error deploying from source"**: 
+- Check Railway **Deployments** tab → click deployment → scroll down to see build logs
+- Common causes:
+  - Ensure all environment variables are set (especially `SUPABASE_URL` and `ANTHROPIC_API_KEY`)
+  - Build command might be failing — check TypeScript compilation errors
+  - Try triggering a **Redeploy** after fixing any env vars
 
-**"Module not found" errors**: Ensure `buildCommand` includes `cd apps/api` prefix.
+**"Module not found" errors during build**:
+- Ensure `buildCommand` properly references `apps/api` subfolder
+- Repository uses monorepo structure — paths must include `apps/api` prefix
+- Current setup: `npm install --prefix apps/api && npm run build --prefix apps/api`
 
-**Crash on start**: Verify all `SUPABASE_*` and `ANTHROPIC_API_KEY` are set.
+**Crash on start with "supabaseUrl is required"**:
+- Missing or incorrect `SUPABASE_URL` in Railway environment variables
+- Copy exact value from Supabase project settings
+- Format: `https://[project-ref].supabase.co`
 
-**CORS errors from tools**: Ensure `FRONTEND_ORIGIN` includes both `belysiumgroup.com` and Vercel tool URLs.
+**"Cannot find module" after _successful_ build**:
+- Start command might be wrong — should be `node apps/api/dist/index.js`
+- NOT `node dist/index.js` (that won't find the compiled output)
+- Check Railway **Settings > Deployment > Start Command**
+
+**CORS errors from tools**:
+- Update `FRONTEND_ORIGIN` to include all domains:
+  - `https://belysiumgroup.com` (main site)
+  - `https://www.belysiumgroup.com` (www variant)
+  - `https://tools-*.belysiumgroup.com` (all tool subdomains)
